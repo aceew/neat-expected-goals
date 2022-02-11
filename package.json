@@ -9,6 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "neat_net-js": "^1.0.14"
+    "justneat": "^0.2.7"
   }
 }
