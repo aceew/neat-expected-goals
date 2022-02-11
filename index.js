@@ -1,85 +1,47 @@
-const Neat = require('justneat');
-const Genome = require('justneat/models/neatGenome')
-const Client = require('justneat/models/client')
+#!/usr/bin/env node
 
-const fs = require('fs');
-const data = require('./data/2019.json');
-const outputFolder = "./output"
+const cli = require('commander')
+const { init, getData } = require('./functions/utils')
+const { predict, train } = require('./functions')
 
-const inputsData = {
-  homePossession: 'team_a_possession',
-  homeAttacks: 'team_a_attacks',
-  awayAttacks: 'team_b_attacks',
-  homePrematchXG: 'team_a_xg_prematch',
-  awayPrematchXG: 'team_b_xg_prematch',
-  homePrematchPPG: 'pre_match_home_ppg',
-  awayPrematchPPG: 'pre_match_away_ppg',
-}
+init()
 
-const accuracy = 0.160
-const expectedOutputLength = 2
-const testCaseName = `${Object.keys(inputsData).join('_')}_${expectedOutputLength}_${accuracy}`
-const networkFilename = `${outputFolder}/${testCaseName}_network.json`
-const resultFilename = `${outputFolder}/${testCaseName}_result.json`
+cli
+    .version('0.0.1')
+    .description('Predict xg with historical match data')
 
-const gameCount = 5
+cli
+    .command('predict <predictorPath> <matchDataPath> <matchIndex>')
+    .alias('p')
+    .description('Predicts match xg using model created during training')
+    .action(function(predictorPath, matchDataPath, matchIndex, args) {
+        const match = getData(matchDataPath)[matchIndex]
+        predict(predictorPath, match)
+    })
 
-const getMatchInputs = (match) => {
-  const inputs = {}
-  Object.keys(inputsData).forEach((key) => {
-    if (key === 'homePossession') {
-      inputs[key] = match.team_a_possession / 100
-    } else {
-      inputs[key] = match[inputsData[key]]
-    }
-  });
+cli
+    .command('train <dataPath>')
+    .alias('t')
+    .description('Trains a model using neat & specified training data')
+    .option('-a, --accuracy <float>', 'specifies target loss (defaults to 0.03).')
+    .option('-s, --startIndex <index>', 'specifies start index to use for training (defaults to 0).')
+    .option('-e, --endIndex <index>', 'specifies end index to use for training (exclusive) (defaults to 10).')
+    .option('-p, --print', 'add to print training progress')
+    .action(function(dataPath, args) {
+        if (args.accuracy == undefined) args.accuracy = 0.03
+        else if (args.accuracy < 0.001) args.accuracy = 0.001
+        else if (args.accuracy > 1) args.accuracy = 1
 
-  const expectedHomeXG = match.team_a_xg
-  const expectedAwayXG = match.team_b_xg
+        if (args.startIndex == undefined) args.startIndex = 0
+        else if (args.startIndex < 0) args.startIndex = 0
 
-  return {
-    inputs,
-    expectedOutputs: {
-      expectedHomeXG,
-      expectedAwayXG
-    }
-  }
-}
+        if (args.endIndex == undefined) args.endIndex = 10
+        else if (args.endIndex <= args.startIndex) args.endIndex = args.startIndex + 1
 
-const run = () => {
-  let neat;
+        if (args.print == undefined) args.print = false
+        else args.print = true
+        const data = getData(dataPath)
+        train(data, args.accuracy, args.startIndex, args.endIndex, args.print)
+    })
 
-  const testMatchData = data.data.slice(0, gameCount).map((match) => {
-    const { inputs, expectedOutputs} = getMatchInputs(match)
-    return [Object.values(inputs), Object.values(expectedOutputs)]
-  })
-
-  const isExisting = fs.existsSync(networkFilename)
-
-  if (isExisting) {
-    const existingData = fs.readFileSync(networkFilename, 'utf-8')
-    neat = Neat.FromJson(existingData)
-  } else {
-    neat = new Neat(testMatchData[0][0].length, expectedOutputLength)
-  }
-
-  const best = neat.trainData(testMatchData, accuracy, true)
-  const networkData = neat.toJson()
-  fs.writeFileSync(networkFilename, networkData)
-  fs.writeFileSync(resultFilename, best.client.genome.toJson())
-};
-
-const predictMatch = () => {
-  // TODO parametise match data
-  const { inputs: inputObject, expectedOutputs } = getMatchInputs(data.data[0])
-
-  // TODO generate on the go
-  const genomeData = require(resultFilename)
-  const client = new Client(Genome.FromJson(JSON.stringify(genomeData)))
-  const outputs = client.predict(Object.values(inputObject))
-  console.table({ outputs, expectedOutputs })
-};
-
-// run();
-
-predictMatch();
+cli.parse(process.argv)

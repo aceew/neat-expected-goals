@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "commander": "^9.0.0",
     "justneat": "^0.2.7"
   }
 }
