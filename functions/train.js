@@ -1,4 +1,4 @@
-const Neat = require('justneat');
+const { Neat } = require('justneat');
 const fs = require('fs');
 const { getMatchInputs, getFileNames } = require('./utils')
 

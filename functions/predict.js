@@ -1,5 +1,4 @@
-const Genome = require('justneat/models/neatGenome')
-const Client = require('justneat/models/client')
+const { Genome, Client } = require('justneat')
 const fs = require('fs')
 const { getMatchInputs } = require('./utils')
 
