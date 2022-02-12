@@ -36,9 +36,9 @@ const getData = (dataPath) => {
 
 
 const getFileNames = accuracy => {
-    const testCaseName = `${Object.keys(inputsData).join('_')}_${accuracy}`
+    const testCaseName = `${Object.keys(inputsData).join('_')}`
     const networkFilename = `${outputFolder}/${testCaseName}_network.json`
-    const resultFilename = `${outputFolder}/${testCaseName}_result.json`
+    const resultFilename = `${outputFolder}/${testCaseName}_${accuracy}_result.json`
     return { networkFilename, resultFilename }
 }
 

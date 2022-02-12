@@ -12,7 +12,6 @@ const train = (data, accuracy, startIndex, endIndex, print) => {
     })
 
     const isExisting = fs.existsSync(networkFilename)
-
     if (isExisting) {
         const existingData = fs.readFileSync(networkFilename, 'utf-8')
         neat = Neat.FromJson(existingData)
@@ -20,9 +19,11 @@ const train = (data, accuracy, startIndex, endIndex, print) => {
         neat = new Neat(testMatchData[0][0].length, 2, { maxPop: 500 })
     }
 
-    const best = neat.trainData(testMatchData, accuracy, print)
-    const networkData = neat.toJson()
-    fs.writeFileSync(networkFilename, networkData)
+    const best = neat.trainData(testMatchData, accuracy, print, (neat, best, gen) => {
+        const networkData = neat.toJson()
+        fs.writeFileSync(networkFilename, networkData)
+        console.log('Saved network')
+    })
     fs.writeFileSync(resultFilename, best.client.genome.toJson())
 };
 
