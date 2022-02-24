@@ -4,7 +4,7 @@ const { getMatchInputs, getFileNames } = require('./utils')
 
 const train = (data, accuracy, startIndex, endIndex, print) => {
     let neat;
-    const { networkFilename, resultFilename } = getFileNames(accuracy)
+    const { networkFilename, resultFilename } = getFileNames()
 
     const testMatchData = data.slice(startIndex, endIndex).map((match) => {
         const { inputsObject, expectedOutputsObject } = getMatchInputs(match)
@@ -16,13 +16,14 @@ const train = (data, accuracy, startIndex, endIndex, print) => {
         const existingData = fs.readFileSync(networkFilename, 'utf-8')
         neat = Neat.FromJson(existingData)
     } else {
-        neat = new Neat(testMatchData[0][0].length, 2, { maxPop: 500 })
+        neat = new Neat(testMatchData[0][0].length, 2, { maxPop: 2000, hyper: { cullRate: 0.8 } })
     }
 
-    const best = neat.trainData(testMatchData, accuracy, print, (neat, best, gen) => {
+    const best = neat.trainData(testMatchData, accuracy, print, (neat, loss, gen) => {
         const networkData = neat.toJson()
         fs.writeFileSync(networkFilename, networkData)
-        console.log('Saved network')
+        fs.writeFileSync(resultFilename, neat.pop[0].genome.toJson())
+        console.log('Saved network & best genome')
     })
     fs.writeFileSync(resultFilename, best.client.genome.toJson())
 };
